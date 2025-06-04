@@ -5,43 +5,46 @@ import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 // https://vitejs.dev/config/
-export default defineConfig({
-  resolve: {
-    alias: {
-      src: resolve(__dirname, 'src'),
+export default defineConfig(({ command }) => {
+  const base = command === 'serve' ? '/' : '/MatDash/';
+  return {
+    resolve: {
+      alias: {
+        src: resolve(__dirname, 'src'),
+      },
     },
-  },
-  esbuild: {
-    loader: 'tsx',
-    include: /src\/.*\.tsx?$/,
-    exclude: [],
-  },
-  optimizeDeps: {
-    esbuildOptions: {
-      plugins: [
-        {
-          name: 'load-js-files-as-tsx',
-          setup(build) {
-            build.onLoad({ filter: /src\\.*\.js$/ }, async (args) => ({
-              loader: 'tsx',
-              contents: await fs.readFile(args.path, 'utf8'),
-            }));
+    esbuild: {
+      loader: 'tsx',
+      include: /src\/.*\.tsx?$/,
+      exclude: [],
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        plugins: [
+          {
+            name: 'load-js-files-as-tsx',
+            setup(build) {
+              build.onLoad({ filter: /src\\.*\.js$/ }, async (args) => ({
+                loader: 'tsx',
+                contents: await fs.readFile(args.path, 'utf8'),
+              }));
+            },
           },
-        },
-      ],
+        ],
+      },
     },
-  },
 
-  plugins: [svgr(), react()],
-  base: '/MatDash',
-  server: {
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3000',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '')
+    plugins: [svgr(), react()],
+    base: base,
+    server: {
+      proxy: {
+        '/api': {
+          target: 'http://localhost:3000',
+          changeOrigin: true,
+          secure: false,
+          rewrite: (path) => path.replace(/^\/api/, '')
+        }
       }
     }
-  }
+  };
 });

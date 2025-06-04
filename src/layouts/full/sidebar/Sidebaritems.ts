@@ -29,7 +29,7 @@ const SidebarContent: MenuItem[] = [
         name: "Dashboard",
         icon: "solar:widget-add-line-duotone",
         id: uniqueId(),
-        url: "/",
+        url: "/dashboard",
       },
     ],
   },
@@ -46,13 +46,13 @@ const SidebarContent: MenuItem[] = [
         name: "Registered Training",
         icon: "solar:file-send-linear",
         id: uniqueId(),
-        url: "/ui/registered",
+        url: "/dashboard/registered",
       },
       {
         name: "Schedule Training",
         icon: "solar:bedside-table-3-linear",
         id: uniqueId(),
-        url: "/ui/sch-training",
+        url: "/dashboard/sch-training",
       },
       // {
       //   name: "Shadow",
@@ -62,40 +62,40 @@ const SidebarContent: MenuItem[] = [
       // },
     ],
   },
-  {
-    heading: "AUTH",
-    children: [
-      {
-        name: "Login",
-        icon: "solar:login-2-linear",
-        id: uniqueId(),
-        url: "/auth/login",
-      },
-      {
-        name: "Register",
-        icon: "solar:shield-user-outline",
-        id: uniqueId(),
-        url: "/auth/register",
-      },
-    ],
-  },
-  {
-    heading: "EXTRA",
-    children: [
-      {
-        name: "Icons",
-        icon: "solar:smile-circle-outline",
-        id: uniqueId(),
-        url: "/icons/solar",
-      },
-      {
-        name: "Sample Page",
-        icon: "solar:notes-minimalistic-outline",
-        id: uniqueId(),
-        url: "/sample-page",
-      },
-    ],
-  },
+  // {
+  //   heading: "AUTH",
+  //   children: [
+  //     {
+  //       name: "Login",
+  //       icon: "solar:login-2-linear",
+  //       id: uniqueId(),
+  //       url: "/auth/login",
+  //     },
+  //     {
+  //       name: "Register",
+  //       icon: "solar:shield-user-outline",
+  //       id: uniqueId(),
+  //       url: "/auth/register",
+  //     },
+  //   ],
+  // },
+  // {
+  //   heading: "EXTRA",
+  //   children: [
+  //     {
+  //       name: "Icons",
+  //       icon: "solar:smile-circle-outline",
+  //       id: uniqueId(),
+  //       url: "/icons/solar",
+  //     },
+  //     {
+  //       name: "Sample Page",
+  //       icon: "solar:notes-minimalistic-outline",
+  //       id: uniqueId(),
+  //       url: "/sample-page",
+  //     },
+  //   ],
+  // },
 ];
 
 export default SidebarContent;

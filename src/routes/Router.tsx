@@ -46,7 +46,7 @@ const AppRoutes = () => {
       >
         <Route index element={<Dashboard />} />
         <Route path="registered" element={<Registered />} />
-        <Route path="schedule" element={<SchsTraining />} />
+        <Route path="sch-training" element={<SchsTraining />} />
         <Route path="form" element={<Form />} />
         <Route path="shadow" element={<Shadow />} />
         <Route path="icons" element={<Solar />} />

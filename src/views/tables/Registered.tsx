@@ -1,4 +1,4 @@
-import { RegisteredTraining } from "src/components/tables/RegisteredTable"
+import RegisteredTraining from "src/components/tables/RegisteredTable"
 
 
 const Table = () => {

@@ -1,35 +1,41 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:3000', // backend berjalan di port 3000
+  baseURL: 'http://localhost:3000', // Mengembalikan baseURL ke port 3000 dan tanpa /api
 });
 
+// Request interceptor untuk menambahkan token ke header
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-    console.log('Axios Interceptor Request: Token from localStorage:', token);
-    console.log('Axios Interceptor Request: Requesting URL:', config.url);
-    if (token && config.headers) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-      console.log('Axios Interceptor Request: Authorization header set for', config.url);
-    } else {
-      console.log('Axios Interceptor Request: No token found or no headers object for', config.url);
+    if (token) {
+      if (!config.headers) {
+        config.headers = {}; // Inisialisasi jika belum ada
+      }
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error: unknown) => {
+  (error) => {
     return Promise.reject(error);
   }
 );
 
+// Response interceptor untuk menangani error global (seperti 401 Unauthorized)
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    console.error('Axios Interceptor Response Error:', error.config?.url, error.response?.status, error.message);
-    if (error?.response?.status === 401) {
+    if (error.response && error.response.status === 401) {
       localStorage.removeItem('token');
-      console.log('Axios Interceptor Response: Unauthorized (401). Redirecting to login.');
-      window.location.href = '/auth/login';
+      localStorage.removeItem('user');
+      // Redirect ke halaman login menggunakan path absolut
+      const loginPath = import.meta.env.BASE_URL + 'auth/login';
+      // Periksa apakah kita sudah di halaman login (atau variasinya karena BASE_URL)
+      if (window.location.pathname !== loginPath.replace(/\/$/, '')) { // Hapus trailing slash jika ada untuk perbandingan
+        window.location.href = loginPath;
+      }
     }
     return Promise.reject(error);
   }

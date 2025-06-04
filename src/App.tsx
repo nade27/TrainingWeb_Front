@@ -9,7 +9,7 @@ function App() {
     <>
       <ThemeModeScript />
       <Flowbite theme={{ theme: customTheme }}>
-        <BrowserRouter>
+        <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AuthProvider>
             <AppRoutes />
           </AuthProvider>

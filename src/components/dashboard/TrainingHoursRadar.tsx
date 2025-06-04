@@ -36,22 +36,17 @@ const fetchChartData = async (): Promise<ChartData> => {
         }],
       };
     } else {
-      console.error("Invalid data structure from API (TrainingHoursRadar):", apiData);
       throw new Error("Invalid data structure from API");
     }
   } catch (error) {
-    console.error('Error fetching chart data (TrainingHoursRadar):', error);
-    return {
-      categories: [],
-      series: [],
-    }; 
+    throw error; 
   }
 };
 
 const TrainingHours = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Tambahkan isLoading
-  const [error, setError] = useState<string | null>(null); // Tambahkan error state
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const getData = async () => {
@@ -60,10 +55,9 @@ const TrainingHours = () => {
       try {
         const data = await fetchChartData();
         setChartData(data);
-      } catch (err:any) { // Tangkap error dari fetchChartData jika terlempar
-        console.error("Error in getData (TrainingHoursRadar):", err);
+      } catch (err:any) {
         setError(err.message || "Failed to load chart data.");
-        setChartData({ categories: [], series: [] }); // Set ke data kosong jika error
+        setChartData({ categories: [], series: [] });
       } finally {
         setIsLoading(false);
       }
@@ -76,7 +70,7 @@ const TrainingHours = () => {
     height: 350,
     type: 'radar',
   },
-  colors: ['#1E90FF'],  // Single color for the line
+  colors: ['#1E90FF'],
   dataLabels: {
     enabled: false,
   },
@@ -95,26 +89,26 @@ const TrainingHours = () => {
     },
   },
   stroke: {
-    width: 2, // Set a stroke width if you want lines to be visible
+    width: 2, 
     curve: 'smooth',
   },
   fill: {
-    type: 'solid', // Solid fill type
-    opacity: 0.2, // Set the opacity to 0.2 for a light transparent fill
-    colors: ['#1E90FF'], // Fill color matching the line colors
+    type: 'solid', 
+    opacity: 0.2, 
+    colors: ['#1E90FF'], 
   },
   xaxis: {
-    categories: chartData ? chartData.categories : [],  // Set categories based on departemen
+    categories: chartData ? chartData.categories : [],
   },
   yaxis: {
-    min: 0,  // Set minimum value to 0
-    tickAmount: 7,  // Number of ticks
+    min: 0,  
+    tickAmount: 7, 
   },
   tooltip: {
     theme: 'dark',
     y: {
       formatter: function (value: number) {
-        return value.toFixed(2);  // Show the data value with 2 decimal places
+        return value.toFixed(2);
       },
     },
   },
@@ -138,7 +132,7 @@ const TrainingHours = () => {
     );
   }
 
-  if (!chartData || chartData.categories.length === 0) { // Periksa jika categories kosong juga menandakan tidak ada data
+  if (!chartData || chartData.categories.length === 0) {
     return (
       <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 relative w-full break-words">
         <h5 className="card-title">Training Hours by Department</h5>

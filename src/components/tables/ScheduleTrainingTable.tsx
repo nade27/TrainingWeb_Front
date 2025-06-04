@@ -23,41 +23,58 @@ interface EmployeeType {
   posisi: string;
 }
 
+// Definisikan tipe untuk respons API /training
+interface ScheduleApiResponse {
+  success?: boolean; // Opsional, tergantung apakah backend selalu mengirim ini
+  training: ScheduleType[];
+}
+
+// Definisikan tipe untuk respons API POST /training/registrasi
+interface RegistrationApiResponse {
+  success: boolean;
+  message?: string;
+  // Tambahkan properti lain jika ada, misalnya data registrasi yang berhasil
+}
+
 const getScheduleData = async (): Promise<ScheduleType[]> => {
   try {
-    const response = await axiosInstance.get('/training/schedule');
-    return response.data;
+    const response = await axiosInstance.get<ScheduleApiResponse>('/training');
+    const apiData = response.data;
+    
+    if (apiData && Array.isArray(apiData.training)) {
+      return apiData.training;
+    } else {
+      // console.error('Invalid schedule data format from API. Expected .training array, got:', apiData); // Dihapus
+      // throw new Error("Invalid schedule data format from API"); // Lebih baik melempar error
+      return []; // Atau kembalikan array kosong jika itu perilaku yang diinginkan
+    }
   } catch (error) {
-    console.error('Error fetching schedule data:', error);
-    return [];
+    // console.error('Error fetching schedule data:', error); // Dihapus
+    throw error; // Lempar error agar komponen pemanggil bisa menanganinya
   }
 };
 
 const getEmployeeDataForTraining = async (topic: string, requirement: string): Promise<EmployeeType[]> => {
   try {
-    // Mengirim nama_topic ke backend saat tombol "Daftar" diklik
-    const response = await fetch('http://localhost:3000/training/cek-karyawan', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nama_topic: topic, requirement: requirement }), // Kirimkan nama topic ke backend
+    // Menggunakan axiosInstance untuk POST request
+    const response = await axiosInstance.post<{ employees: EmployeeType[] }>('/training/cek-karyawan', {
+      nama_topic: topic,
+      requirement: requirement
     });
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const data = await response.json();
-    console.log('Employee Data:', data);
+    
+    const apiData = response.data;
+    // console.log('Employee Data from axios:', apiData); // Dihapus
 
-    if (data && Array.isArray(data.employees)) {
-      return data.employees; // Update employee data
+    if (apiData && Array.isArray(apiData.employees)) {
+      return apiData.employees;
     } else {
-      console.error('Invalid employee data format', data);
-      return []; // Return empty array if data format is invalid
+      // console.error('Invalid employee data format from axios', apiData); // Dihapus
+      // throw new Error("Invalid employee data format from API"); // Lebih baik melempar error
+      return []; // Atau kembalikan array kosong jika itu perilaku yang diinginkan
     }
   } catch (error) {
-    console.error('Error fetching employee data:', error);
-    return []; // Return an empty array on error
+    // console.error('Error fetching employee data with axios:', error); // Dihapus
+    throw error; // Lempar error agar bisa ditangani oleh komponen pemanggil
   }
 };
 
@@ -217,43 +234,43 @@ const ScheduleTraining: React.FC = () => {
   };
 
   const handleRegister = async () => {
-    // Ensure there are selected employees
     if (selectedEmployees.size === 0) {
       alert('Please select at least one employee to register');
       return;
     }
 
-    // Get the selected training ID from the modal (this will be passed into the modal)
     const id_training = selectedTrainingId;
-    console.log("Selected Training ID: " + id_training); // Debugging to ensure the correct id
+    if (!id_training) {
+      alert('Selected training ID is missing. Cannot register.');
+      return;
+    }
 
-    // Convert selected employee IDs to an array
     const id_karyawan = Array.from(selectedEmployees);
-    console.log("KywTraining" + id_karyawan)
 
     try {
-      const response = await fetch('http://localhost:3000/training/registrasi', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id_training,
-          id_karyawan,
-        }),
+      // Menggunakan axiosInstance dan RegistrationApiResponse
+      const response = await axiosInstance.post<RegistrationApiResponse>('/training/registrasi', {
+        id_training,
+        id_karyawan,
       });
-      console.log(id_training)
-      console.log(id_karyawan)
 
-      const result = await response.json();
-      if (result.ok) {
-        alert('Employees successfully registered for the training');
+      if (response.data && response.data.success) {
+        alert(response.data.message || 'Employees successfully registered for the training');
+        setShowModal(false);
+        setSelectedEmployees(new Set());
       } else {
-        alert('Failed to register employees');
+        alert(response.data?.message || 'Failed to register employees. Please check server logs.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error registering employees:', error);
-      alert('An error occurred while registering employees');
+      let errorMessage = 'An error occurred while registering employees.';
+      // Akses error.response.data?.message dengan aman
+      if (error.response && error.response.data && typeof error.response.data.message === 'string') {
+        errorMessage = error.response.data.message;
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      alert(errorMessage);
     }
   };
 

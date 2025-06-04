@@ -22,19 +22,13 @@ const getTrainHoursEmployeeData = async (): Promise<TrainingHoursEmployeeData[]>
   try {
     const response = await axiosInstance.get<StatusTrainEmpApiResponse>('/dashboard/training-hours-employee');
     const apiData = response.data;
-    console.log('Fetched Data (StatusTrainEmp):', apiData); 
 
     if (apiData && Array.isArray(apiData.trainingHoursEmployee)) {
-      console.log('Valid data structure (StatusTrainEmp)', apiData.trainingHoursEmployee);
       return apiData.trainingHoursEmployee;
     } else {
-      console.error('Invalid data structure (StatusTrainEmp):', apiData);
-      throw new Error("Invalid data structure from API"); // Lempar error agar bisa ditangkap
+      throw new Error("Invalid data structure from API");
     }
   } catch (error) {
-    console.error('Error fetching data (StatusTrainEmp):', error);
-    // Tidak mengembalikan array kosong di sini, biarkan error dilempar
-    // agar komponen pemanggil bisa menanganinya (misalnya, menampilkan pesan error)
     throw error; 
   }
 };
@@ -74,13 +68,10 @@ const TrainHoursEmployee = () => {
       setError(null);
       try {
         const data = await getTrainHoursEmployeeData();
-        console.log('Fetched Data in component (StatusTrainEmp):', data);
-        // Tidak perlu cek Array.isArray(data) lagi karena getTrainHoursEmployeeData sudah memastikan atau melempar error
         setTrainHoursEmployeeData(data);
       } catch (err: any) {
-        console.error('Error in fetchData component (StatusTrainEmp):', err);
         setError(err.message || "Failed to load employee training data.");
-        setTrainHoursEmployeeData([]); // Set ke array kosong jika error
+        setTrainHoursEmployeeData([]);
       } finally {
         setIsLoading(false);
       }
@@ -88,7 +79,7 @@ const TrainHoursEmployee = () => {
     fetchData();
   }, []);
 
-  if (isLoading) { // Tambahkan penanganan isLoading
+  if (isLoading) {
     return (
       <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6">
         <h5 className="card-title mb-6 px-6">Training Status Employee</h5>
@@ -97,7 +88,7 @@ const TrainHoursEmployee = () => {
     );
   }
 
-  if (error) { // Tambahkan penanganan error
+  if (error) {
     return (
       <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6">
         <h5 className="card-title mb-6 px-6">Training Status Employee</h5>

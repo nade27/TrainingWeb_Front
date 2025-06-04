@@ -2,16 +2,17 @@ import { useEffect, useState } from "react";
 import axiosInstance from "../../utils/axios"; // Impor axiosInstance
 
 // Define the type for the data you expect from the API
-interface TrainingItem {
-  topic: string;
+interface TrainingItemFromApi {
+  topic: string; // Sesuaikan ini jika Anda mengubah alias di backend menjadi 'topic'
+  // atau gunakan nama_topik jika backend mengirim itu dan Anda tidak mengubah query
+  // nama_topik?: string; 
   startDate: string;
   venue: string;
-  // Anda mungkin perlu menambahkan properti lain di sini jika ada dari API
 }
 
 interface TrainingApiResponse {
-  training: TrainingItem[];
-  // tambahkan properti lain di root response jika ada, misal: message: string;
+  success?: boolean; // Tambahkan properti success jika ada
+  training: TrainingItemFromApi[];
 }
 
 // Define the type for the processed activity steps
@@ -39,93 +40,112 @@ const NextTraining = () => {
     const today = new Date().toISOString().split('T')[0];
     const daysDiff = calculateDaysDifference(today, startDate);
     
-    if (daysDiff <= 7) return 'text-error';
-    if (daysDiff <= 14) return 'text-warning';
-    return 'text-success';
+    if (daysDiff <= 7) return 'bg-error';
+    if (daysDiff <= 14) return 'bg-warning';
+    return 'bg-success';
   };
 
   // Function to format date to DD-MMM
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
     return date.toLocaleDateString('id-ID', {
-      year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric'
     });
   };
 
   useEffect(() => {
-    setLoading(true); // Set loading true di awal
-    axiosInstance.get<TrainingApiResponse>("/training") // Gunakan tipe TrainingApiResponse
+    setLoading(true);
+    axiosInstance.get<TrainingApiResponse>("/training")
       .then((response) => {
         const data = response.data;
-        console.log("Fetched data with axios:", data); 
 
-        // Sekarang 'data' memiliki tipe TrainingApiResponse, dan 'data.training' akan dikenali
         if (data && Array.isArray(data.training)) {
-          console.log("Found 'training' array with axios.");
           const filteredData = data.training
-            .filter((item: TrainingItem) => { // item sekarang bertipe TrainingItem
-              const today = new Date().toISOString().split('T')[0];
-              return new Date(item.startDate) >= new Date(today); 
+            .filter((item: TrainingItemFromApi) => {
+              const today = new Date();
+              today.setHours(0, 0, 0, 0);
+              const itemStartDate = new Date(item.startDate);
+              if (isNaN(itemStartDate.getTime())) {
+                  return false;
+              }
+              return itemStartDate >= today; 
             })
-            .map((item: TrainingItem) => ({
-              topic: item.topic,
+            .map((item: TrainingItemFromApi) => ({
+              topic: item.topic || (item as any).nama_topik || "No Topic",
               startDate: formatDate(item.startDate), 
-              venue: item.venue,
+              venue: item.venue || "No Venue",
               color: getColorBasedOnDate(item.startDate), 
             }));
+          
           setActivitySteps(filteredData); 
         } else {
-          console.error("Fetched data with axios is not in the expected format:", data);
           setError(new Error("Fetched data is not in the expected format"));
         }
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching data with axios:", error);
         setError(error);
         setLoading(false);
       });
   }, []);
 
+  useEffect(() => {
+  }, [activitySteps]);
+
   if (loading) {
-    return <p>Loading...</p>;
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 px-5 relative w-full break-words">
+        <h5 className="card-title mb-6">Next Training</h5>
+        <p>Loading...</p>
+      </div>
+    );
   }
 
   if (error) {
-    return <p>Error: {error.message}</p>;
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 px-5 relative w-full break-words">
+        <h5 className="card-title mb-6">Next Training</h5>
+        <p className="text-red-500">Error: {error.message}</p>
+      </div>
+    );
   }
 
   return (
     <>
       <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 px-5 relative w-full break-words">
         <h5 className="card-title mb-6">Next Training</h5>
+        {activitySteps.length === 0 ? (
+          <p>No upcoming training sessions found.</p>
+        ) : (
+          <div className="flex flex-col mt-2">
+            <ul className="overflow-y-auto max-h-[450px]">
+              {activitySteps.map((item, index) => (
+                <li key={index} className="flex items-center gap-4 min-h-16">
+                  {/* Date Section */}
+                  <div className="w-1/4 text-end">
+                    <p>{item.startDate}</p>
+                  </div>
 
-        <div className="flex flex-col mt-2">
-          <ul className="overflow-y-auto max-h-[450px]">
-            {activitySteps.map((item, index) => (
-              <li key={index} className="flex items-center gap-4 min-h-16">
-                {/* Date Section */}
-                <div className="w-1/4 text-end">
-                  <p>{item.startDate || "No Start Date Provided"}</p>
-                </div>
+                  {/* Vertical Line Section */}
+                  <div className="flex items-center justify-center w-1/12 relative flex-grow">
+                    <div className={`rounded-full ${item.color} p-1.5 w-fit h-fit`}></div>
+                    <div className="h-full w-px bg-border"></div> {/* The line now stretches */}
+                  </div>
 
-                {/* Vertical Line Section */}
-                <div className="flex items-center justify-center w-1/12 relative flex-grow">
-                  <div className={`rounded-full ${item.color} p-1.5 w-fit h-fit`}></div>
-                  <div className="h-full w-px bg-border"></div> {/* The line now stretches */}
-                </div>
-
-                {/* Topic and Venue Section */}
-                <div className="flex flex-col justify-center w-1/2 text-dark text-start">
-                  <p className="text-xs font-semibold">{item.topic || "No Topic Provided"}</p>
-                  <p className="text-xs">{item.venue || "No Venue Provided"}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
+                  {/* Topic and Venue Section */}
+                  <div className="flex flex-col justify-center w-1/2 text-dark text-start">
+                    <p className="text-xs font-semibold">{item.topic}</p>
+                    <p className="text-xs">{item.venue}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
     </>
   );

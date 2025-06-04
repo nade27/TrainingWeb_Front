@@ -1,10 +1,8 @@
-
-import { Dropdown } from "flowbite-react";
+import { Dropdown, Table, Spinner, Alert } from "flowbite-react";
 import { HiOutlineDotsVertical } from "react-icons/hi";
 import { Icon } from "@iconify/react";
-import { Table } from "flowbite-react";
 import { useEffect, useState } from "react";
-
+import axiosInstance from "../../utils/axios";
 
 interface RegisteredDataType {
   id: number;
@@ -19,53 +17,63 @@ interface RegisteredDataType {
   status: string
 }
 
+interface RegisteredApiResponse {
+  regtraining: RegisteredDataType[];
+}
+
 const getRegisteredData = async (): Promise<RegisteredDataType[]> => {
   try {
-    const response = await fetch("http://localhost:3000/training/registrasi");
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
-    const data = await response.json();
+    const response = await axiosInstance.get<RegisteredApiResponse>("/training/registrasi");
+    const apiData = response.data;
 
-    // Check the structure of the response and access the 'regtraining' property
-    if (data && Array.isArray(data.regtraining)) {
-      console.log("Valid data structure", data.regtraining);  // Log to verify the array
-      return data.regtraining;  // Return the regtraining array
+    if (apiData && Array.isArray(apiData.regtraining)) {
+      return apiData.regtraining;
+    } else if (Array.isArray(apiData)) {
+      return apiData as RegisteredDataType[];
     } else {
-      console.error("Invalid data structure:", data);
-      return [];  // Return an empty array if the structure is not as expected
+      console.error("[RegisteredTable] getRegisteredData: Invalid data structure from API. Expected '.regtraining' array or a direct array, got:", apiData);
+      return []; 
     }
   } catch (error) {
-    console.error("Error fetching data:", error);
-    return [];
+    console.error("[RegisteredTable] getRegisteredData: Error fetching data:", error);
+    throw error;
   }
 };
-
-
-
 
 const RegisteredTraining: React.FC = () => {
   const [RegisteredData, setRegisteredData] = useState<RegisteredDataType[]>([]);
   const [visibleData, setVisibleData] = useState<RegisteredDataType[]>([]);
-  // const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [sortConfig, setSortConfig] = useState<{ key: keyof RegisteredDataType; direction: string}>({key: 'nama',direction: 'asc'});
   const [startDateFilter, setStartDateFilter] = useState<string>('');
   const [endDateFilter, setEndDateFilter] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getRegisteredData();
-      console.log('Fetched Data:', data);
-  
-      // If the data is not an array, return an empty array
-      if (Array.isArray(data)) {
-        setRegisteredData(data);
-        setVisibleData(data);
-      } else {
-        console.error('Invalid data format received from the API.');
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getRegisteredData();
+        console.log('[RegisteredTable] useEffect: Data processed by getRegisteredData:', data);
+    
+        if (Array.isArray(data)) {
+          setRegisteredData(data);
+          setVisibleData(data);
+        } else {
+          console.error('[RegisteredTable] useEffect: Data from getRegisteredData is not an array:', data);
+          setRegisteredData([]);
+          setVisibleData([]);
+          setError("Format data tidak valid diterima dari server.");
+        }
+      } catch (err: any) {
+        console.error('[RegisteredTable] useEffect: Error fetching registered training data:', err);
+        setError(err.message || "Gagal memuat data training yang terdaftar.");
         setRegisteredData([]);
         setVisibleData([]);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
@@ -135,6 +143,25 @@ const RegisteredTraining: React.FC = () => {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 relative w-full break-words text-center">
+        <Spinner aria-label="Loading registered training data" size="xl" />
+        <p className="mt-2">Memuat data training terdaftar...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 relative w-full break-words">
+        <Alert color="failure">
+          <span className="font-medium">Error!</span> {error}
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6  relative w-full break-words">
@@ -184,59 +211,67 @@ const RegisteredTraining: React.FC = () => {
                   <Table.HeadCell></Table.HeadCell>
                 </Table.Head>
                 <Table.Body className="divide-y divide-border dark:divide-darkborder ">
-                  {(visibleData || []).map((item, index) => (
-                    <Table.Row key={item.id}>
-                      <Table.Cell>
-                        <h6 className="text-sm">{index +1}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.nama}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.nip}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.departemen}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.topic}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.startDate}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.endDate}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.duration}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.venue}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <h6 className="text-sm">{item.status}</h6>
-                      </Table.Cell>
-                      <Table.Cell>
-                        <Dropdown
-                          label=""
-                          dismissOnClick={false}
-                          renderTrigger={() => (
-                            <span className="h-9 w-9 flex justify-center items-center rounded-full hover:bg-lightprimary hover:text-primary cursor-pointer">
-                              <HiOutlineDotsVertical size={22} />
-                            </span>
-                          )}
-                        >
-                          {tableActionData.map((items, index) => (
-                            <Dropdown.Item key={index} className="flex gap-3">
-                              {" "}
-                              <Icon icon={`${items.icon}`} height={18} />
-                              <span>{items.listtitle}</span>
-                            </Dropdown.Item>
-                          ))}
-                        </Dropdown>
+                  {(visibleData && visibleData.length > 0) ? (
+                    visibleData.map((item, index) => (
+                      <Table.Row key={item.id}>
+                        <Table.Cell>
+                          <h6 className="text-sm">{index +1}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.nama}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.nip}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.departemen}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.topic}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.startDate}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.endDate}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.duration}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.venue}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <h6 className="text-sm">{item.status}</h6>
+                        </Table.Cell>
+                        <Table.Cell>
+                          <Dropdown
+                            label=""
+                            dismissOnClick={false}
+                            renderTrigger={() => (
+                              <span className="h-9 w-9 flex justify-center items-center rounded-full hover:bg-lightprimary hover:text-primary cursor-pointer">
+                                <HiOutlineDotsVertical size={22} />
+                              </span>
+                            )}
+                          >
+                            {tableActionData.map((items, index) => (
+                              <Dropdown.Item key={index} className="flex gap-3">
+                                {" "}
+                                <Icon icon={`${items.icon}`} height={18} />
+                                <span>{items.listtitle}</span>
+                              </Dropdown.Item>
+                            ))}
+                          </Dropdown>
+                        </Table.Cell>
+                      </Table.Row>
+                    ))
+                  ) : (
+                    <Table.Row>
+                      <Table.Cell colSpan={11} className="text-center">
+                        Tidak ada data training terdaftar yang ditemukan.
                       </Table.Cell>
                     </Table.Row>
-                  ))}
+                  )}
                 </Table.Body>
               </Table>
             </div>
@@ -247,4 +282,4 @@ const RegisteredTraining: React.FC = () => {
   );
 };
 
-export  { RegisteredTraining };
+export default RegisteredTraining;
