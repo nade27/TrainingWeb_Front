@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Table } from 'flowbite-react';
 // import { HiOutlineDotsVertical } from "react-icons/hi";
+import axiosInstance from '../../utils/axios';
 
 interface ScheduleType {
   id: number;
@@ -24,10 +25,8 @@ interface EmployeeType {
 
 const getScheduleData = async (): Promise<ScheduleType[]> => {
   try {
-    const response = await fetch('http://localhost:3000/training');
-    const data = await response.json();
-    console.log('Data awal' + data);
-    return data.training || [];
+    const response = await axiosInstance.get('/training/schedule');
+    return response.data;
   } catch (error) {
     console.error('Error fetching schedule data:', error);
     return [];

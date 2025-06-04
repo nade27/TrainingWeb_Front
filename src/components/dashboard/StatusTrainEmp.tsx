@@ -2,6 +2,7 @@ import { Badge } from 'flowbite-react';
 import { Table } from 'flowbite-react';
 import { useEffect, useState } from 'react';
 import SimpleBar from 'simplebar-react';
+import axiosInstance from '../../utils/axios'; // Impor axiosInstance
 
 interface TrainingHoursEmployeeData {
   id: number;
@@ -12,26 +13,29 @@ interface TrainingHoursEmployeeData {
   total_durasi: string;
 }
 
+// Definisikan tipe untuk respons API
+interface StatusTrainEmpApiResponse {
+  trainingHoursEmployee: TrainingHoursEmployeeData[];
+}
+
 const getTrainHoursEmployeeData = async (): Promise<TrainingHoursEmployeeData[]> => {
   try {
-    const response = await fetch('http://localhost:3000/dashboard/training-hours-employee');
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    const data = await response.json();
-    console.log('Fetched Data:', data); // Log full data to check the structure
+    const response = await axiosInstance.get<StatusTrainEmpApiResponse>('/dashboard/training-hours-employee');
+    const apiData = response.data;
+    console.log('Fetched Data (StatusTrainEmp):', apiData); 
 
-    // Check if 'trainingHoursEmployee' exists in the response
-    if (data && Array.isArray(data.trainingHoursEmployee)) {
-      console.log('Valid data structure', data.trainingHoursEmployee); // Log to verify the array
-      return data.trainingHoursEmployee; // Return the array inside 'trainingHoursEmployee'
+    if (apiData && Array.isArray(apiData.trainingHoursEmployee)) {
+      console.log('Valid data structure (StatusTrainEmp)', apiData.trainingHoursEmployee);
+      return apiData.trainingHoursEmployee;
     } else {
-      console.error('Invalid data structure:', data);
-      return []; // Return an empty array if the structure is not as expected
+      console.error('Invalid data structure (StatusTrainEmp):', apiData);
+      throw new Error("Invalid data structure from API"); // Lempar error agar bisa ditangkap
     }
   } catch (error) {
-    console.error('Error fetching data:', error);
-    return [];
+    console.error('Error fetching data (StatusTrainEmp):', error);
+    // Tidak mengembalikan array kosong di sini, biarkan error dilempar
+    // agar komponen pemanggil bisa menanganinya (misalnya, menampilkan pesan error)
+    throw error; 
   }
 };
 
@@ -60,22 +64,47 @@ const getPriority = (total_durasi: string) => {
 };
 
 const TrainHoursEmployee = () => {
-  const [TrainHourEmployeeData, setTrainHoursEmployeeData] = useState<TrainingHoursEmployeeData[]>(
-    [],
-  );
+  const [trainHourEmployeeData, setTrainHoursEmployeeData] = useState<TrainingHoursEmployeeData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      const data = await getTrainHoursEmployeeData();
-      console.log('Fetched Data:', data); // Log the data to verify 'total_durasi'
-      if (Array.isArray(data)) {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getTrainHoursEmployeeData();
+        console.log('Fetched Data in component (StatusTrainEmp):', data);
+        // Tidak perlu cek Array.isArray(data) lagi karena getTrainHoursEmployeeData sudah memastikan atau melempar error
         setTrainHoursEmployeeData(data);
-      } else {
-        console.error('Data is not an array:', data);
+      } catch (err: any) {
+        console.error('Error in fetchData component (StatusTrainEmp):', err);
+        setError(err.message || "Failed to load employee training data.");
+        setTrainHoursEmployeeData([]); // Set ke array kosong jika error
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
   }, []);
+
+  if (isLoading) { // Tambahkan penanganan isLoading
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6">
+        <h5 className="card-title mb-6 px-6">Training Status Employee</h5>
+        <p className="px-6">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) { // Tambahkan penanganan error
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6">
+        <h5 className="card-title mb-6 px-6">Training Status Employee</h5>
+        <p className="text-red-500 px-6">Error: {error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -94,7 +123,7 @@ const TrainHoursEmployee = () => {
                 <Table.HeadCell>Priority</Table.HeadCell>
               </Table.Head>
               <Table.Body className="divide-y divide-border dark:divide-darkborder ">
-                {TrainHourEmployeeData.map((item, index) => {
+                {trainHourEmployeeData.map((item, index) => {
                   const { prioritybg, prioritycolor, prioritytext } = getPriority(
                     item.total_durasi,
                   );

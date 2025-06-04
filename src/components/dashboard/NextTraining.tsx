@@ -1,9 +1,23 @@
 import { useEffect, useState } from "react";
+import axiosInstance from "../../utils/axios"; // Impor axiosInstance
 
-// Define the type for the data you expect
-interface Activity {
+// Define the type for the data you expect from the API
+interface TrainingItem {
   topic: string;
   startDate: string;
+  venue: string;
+  // Anda mungkin perlu menambahkan properti lain di sini jika ada dari API
+}
+
+interface TrainingApiResponse {
+  training: TrainingItem[];
+  // tambahkan properti lain di root response jika ada, misal: message: string;
+}
+
+// Define the type for the processed activity steps
+interface Activity {
+  topic: string;
+  startDate: string; // Ini sudah diformat
   venue: string;
   color: string;
 }
@@ -17,62 +31,59 @@ const NextTraining = () => {
   const calculateDaysDifference = (date1: string, date2: string): number => {
     const d1 = new Date(date1);
     const d2 = new Date(date2);
-    const timeDiff = d2.getTime() - d1.getTime();
-    return timeDiff / (1000 * 3600 * 24); // Convert time difference to days
+    return Math.floor((d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24));
   };
 
   // Function to determine the color based on the date
   const getColorBasedOnDate = (startDate: string): string => {
-    const today = new Date().toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-    const daysDifference = calculateDaysDifference(today, startDate);
-
-    if (daysDifference === 0) {
-      return "bg-primary"; // Today's event
-    } else if (daysDifference > 0 && daysDifference <= 7) {
-      return "bg-warning"; // Next 7 days events
-    } else if (daysDifference > 7) {
-      return "bg-secondary"; // More than 7 days ahead
-    }
-    return "bg-light"; // Default color (if any case doesn't match)
+    const today = new Date().toISOString().split('T')[0];
+    const daysDiff = calculateDaysDifference(today, startDate);
+    
+    if (daysDiff <= 7) return 'text-error';
+    if (daysDiff <= 14) return 'text-warning';
+    return 'text-success';
   };
 
   // Function to format date to DD-MMM
   const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    const options: Intl.DateTimeFormatOptions = { day: "2-digit", month: "short" };
-    return new Intl.DateTimeFormat("en-GB", options).format(date);
+    return date.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   useEffect(() => {
-    // Fetch data from the API when the component mounts
-    fetch("http://localhost:3000/training")
-      .then((response) => response.json())
-      .then((data) => {
-        console.log("Fetched data:", data); // Log the entire fetched data
+    setLoading(true); // Set loading true di awal
+    axiosInstance.get<TrainingApiResponse>("/training") // Gunakan tipe TrainingApiResponse
+      .then((response) => {
+        const data = response.data;
+        console.log("Fetched data with axios:", data); 
 
-        // Check if the 'training' array exists
+        // Sekarang 'data' memiliki tipe TrainingApiResponse, dan 'data.training' akan dikenali
         if (data && Array.isArray(data.training)) {
-          console.log("Found 'training' array.");
+          console.log("Found 'training' array with axios.");
           const filteredData = data.training
-            .filter((item: any) => {
+            .filter((item: TrainingItem) => { // item sekarang bertipe TrainingItem
               const today = new Date().toISOString().split('T')[0];
-              return new Date(item.startDate) >= new Date(today); // Keep only future events
+              return new Date(item.startDate) >= new Date(today); 
             })
-            .map((item: any) => ({
+            .map((item: TrainingItem) => ({
               topic: item.topic,
-              startDate: formatDate(item.startDate), // Format the startDate
+              startDate: formatDate(item.startDate), 
               venue: item.venue,
-              color: getColorBasedOnDate(item.startDate), // Set the color based on the date
+              color: getColorBasedOnDate(item.startDate), 
             }));
-          setActivitySteps(filteredData); // Set the filtered data to the state
+          setActivitySteps(filteredData); 
         } else {
-          console.error("Fetched data is not in the expected format:", data);
+          console.error("Fetched data with axios is not in the expected format:", data);
           setError(new Error("Fetched data is not in the expected format"));
         }
         setLoading(false);
       })
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        console.error("Error fetching data with axios:", error);
         setError(error);
         setLoading(false);
       });

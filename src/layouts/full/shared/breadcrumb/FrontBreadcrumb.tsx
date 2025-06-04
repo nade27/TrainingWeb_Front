@@ -1,6 +1,5 @@
-
 import { IconChevronRight } from "@tabler/icons-react";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
 
 
 

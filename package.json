@@ -14,9 +14,10 @@
   },
   "dependencies": {
     "@svgr/rollup": "8.1.0",
-    "@tabler/icons-react": "^2.39.0",
+    "@tabler/icons-react": "^2.47.0",
     "aos": "^2.3.4",
     "apexcharts": "3.48.0",
+    "axios": "^1.9.0",
     "chance": "^1.1.11",
     "date-fns": "^2.30.0",
     "flowbite": "^2.5.2",
@@ -44,8 +45,9 @@
     "yup": "^0.32.11"
   },
   "devDependencies": {
-    "@iconify/react": "^5.1.0",
+    "@iconify/react": "^5.2.1",
     "@types/aos": "^3.0.7",
+    "@types/axios": "^0.9.36",
     "@types/chance": "^1.1.6",
     "@types/node": "20.10.5",
     "@types/react": "^18.3.12",

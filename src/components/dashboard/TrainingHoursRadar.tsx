@@ -1,47 +1,72 @@
 import { useState, useEffect } from 'react';
 import { ApexOptions } from 'apexcharts';
 import Chart from 'react-apexcharts';
+import axiosInstance from '../../utils/axios'; // Impor axiosInstance
 
-// Define the structure of the chart data
+// Definisikan tipe untuk item data dan respons API
+interface TrainingHourItem {
+  departemen: string;
+  total_durasi_per_karyawan: string | number;
+}
+
+interface TrainingHoursApiResponse {
+  trainingHoursData: TrainingHourItem[];
+}
+
+// Definisikan tipe untuk data chart yang sudah diproses
 type ChartData = {
-  categories: string[];  // Departemen
-  series: { name: string; data: number[] }[];  // Total durasi per departemen
+  categories: string[];
+  series: { name: string; data: number[] }[];
 };
 
-// Mock function to simulate database call
 const fetchChartData = async (): Promise<ChartData> => {
   try {
-    const response = await fetch('http://localhost:3000/dashboard/training-hours');
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
+    const response = await axiosInstance.get<TrainingHoursApiResponse>('/dashboard/training-hours');
+    const apiData = response.data;
+    
+    if (apiData && Array.isArray(apiData.trainingHoursData)) {
+      const categories = apiData.trainingHoursData.map((item) => item.departemen);
+      const seriesData = apiData.trainingHoursData.map((item) => parseFloat(item.total_durasi_per_karyawan.toString()));
+      
+      return {
+        categories,
+        series: [{
+          name: 'Total Durasi',
+          data: seriesData,
+        }],
+      };
+    } else {
+      console.error("Invalid data structure from API (TrainingHoursRadar):", apiData);
+      throw new Error("Invalid data structure from API");
     }
-    const data = await response.json();
-    
-    // Transform the data into the format required for the chart
-    const categories = data.trainingHoursData.map((item: { departemen: any; }) => item.departemen);  // Extract departemen as categories
-    const series = [{
-      name: 'Total Durasi',  // The series name (you can change it)
-      data: data.trainingHoursData.map((item: { total_durasi_per_karyawan: string; }) => parseFloat(item.total_durasi_per_karyawan))  // Convert total_durasi to number
-    }];
-    
-    return { categories, series };
   } catch (error) {
-    console.error('Error fetching data:', error);
+    console.error('Error fetching chart data (TrainingHoursRadar):', error);
     return {
       categories: [],
       series: [],
-    }; // Return empty data on error
+    }; 
   }
 };
 
 const TrainingHours = () => {
   const [chartData, setChartData] = useState<ChartData | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true); // Tambahkan isLoading
+  const [error, setError] = useState<string | null>(null); // Tambahkan error state
 
-  // Fetch data when the component mounts
   useEffect(() => {
     const getData = async () => {
-      const data = await fetchChartData();
-      setChartData(data);
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await fetchChartData();
+        setChartData(data);
+      } catch (err:any) { // Tangkap error dari fetchChartData jika terlempar
+        console.error("Error in getData (TrainingHoursRadar):", err);
+        setError(err.message || "Failed to load chart data.");
+        setChartData({ categories: [], series: [] }); // Set ke data kosong jika error
+      } finally {
+        setIsLoading(false);
+      }
     };
     getData();
   }, []);
@@ -95,13 +120,29 @@ const TrainingHours = () => {
   },
 };
 
-
-  // Check if chartData or its properties are available
-  if (!chartData || !chartData.categories || chartData.categories.length === 0 || !chartData.series || chartData.series.length === 0) {
+  if (isLoading) {
     return (
       <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 relative w-full break-words">
         <h5 className="card-title">Training Hours by Department</h5>
         <div>Loading...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 relative w-full break-words">
+        <h5 className="card-title">Training Hours by Department</h5>
+        <div className="text-red-500">Error: {error}</div>
+      </div>
+    );
+  }
+
+  if (!chartData || chartData.categories.length === 0) { // Periksa jika categories kosong juga menandakan tidak ada data
+    return (
+      <div className="rounded-xl dark:shadow-dark-md shadow-md bg-white dark:bg-darkgray p-6 relative w-full break-words">
+        <h5 className="card-title">Training Hours by Department</h5>
+        <div>No data available to display chart.</div>
       </div>
     );
   }

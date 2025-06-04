@@ -1,16 +1,19 @@
-import { RouterProvider } from "react-router";
+import { BrowserRouter } from "react-router-dom";
 import { Flowbite, ThemeModeScript } from 'flowbite-react';
 import customTheme from './utils/theme/custom-theme';
-import router from "./routes/Router";
-
+import { AuthProvider } from './hooks/useAuth';
+import AppRoutes from "./routes/Router";
 
 function App() {
-
   return (
     <>
       <ThemeModeScript />
       <Flowbite theme={{ theme: customTheme }}>
-      <RouterProvider router={router} />
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
       </Flowbite>
     </>
   );
