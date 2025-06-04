@@ -46,13 +46,13 @@ const SidebarContent: MenuItem[] = [
         name: "Registered Training",
         icon: "solar:file-send-linear",
         id: uniqueId(),
-        url: "/dashboard/registered",
+        url: "/registered",
       },
       {
         name: "Schedule Training",
         icon: "solar:bedside-table-3-linear",
         id: uniqueId(),
-        url: "/dashboard/sch-training",
+        url: "/sch-training",
       },
       // {
       //   name: "Shadow",

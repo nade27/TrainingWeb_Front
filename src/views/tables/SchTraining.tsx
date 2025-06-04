@@ -1,12 +1,12 @@
-import { ScheduleTraining } from "src/components/tables/ScheduleTrainingTable"
+import { ScheduleTrainingTable } from "src/components/tables/ScheduleTrainingTable"
 
 
-const Table = () => {
+const ScheduleTraining = () => {
   return (
      <>
-     <ScheduleTraining/>
+     <ScheduleTrainingTable/>
      </>
   )
 }
 
-export default Table
+export default ScheduleTraining

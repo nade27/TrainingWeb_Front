@@ -55,6 +55,7 @@ const getScheduleData = async (): Promise<ScheduleType[]> => {
 };
 
 const getEmployeeDataForTraining = async (topic: string, requirement: string): Promise<EmployeeType[]> => {
+  console.log('[ScheduleTable] getEmployeeDataForTraining: Fetching employees for topic:', topic, 'requirement:', requirement);
   try {
     // Menggunakan axiosInstance untuk POST request
     const response = await axiosInstance.post<{ employees: EmployeeType[] }>('/training/cek-karyawan', {
@@ -63,9 +64,10 @@ const getEmployeeDataForTraining = async (topic: string, requirement: string): P
     });
     
     const apiData = response.data;
-    // console.log('Employee Data from axios:', apiData); // Dihapus
+    console.log('[ScheduleTable] getEmployeeDataForTraining: Response from /training/cek-karyawan:', apiData);
 
     if (apiData && Array.isArray(apiData.employees)) {
+      console.log('[ScheduleTable] getEmployeeDataForTraining: Returning employees:', apiData.employees);
       return apiData.employees;
     } else {
       // console.error('Invalid employee data format from axios', apiData); // Dihapus
@@ -78,7 +80,7 @@ const getEmployeeDataForTraining = async (topic: string, requirement: string): P
   }
 };
 
-const ScheduleTraining: React.FC = () => {
+const ScheduleTrainingTable: React.FC = () => {
   const [scheduleData, setScheduleData] = useState<ScheduleType[]>([]);
   // const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -213,13 +215,21 @@ const ScheduleTraining: React.FC = () => {
 
   const toggleModal = (training: ScheduleType) => {
     setShowModal(!showModal);
-    setSelectedTrainingId(training.id); // Set the selected training ID when modal opens
+    setSelectedTrainingId(training.id);
+    console.log('[ScheduleTable] toggleModal: Opening modal for training ID:', training.id, 'Topic:', training.topic, 'Requirement:', training.requirement);
   
-    // Fetch employee data based on the selected training topic
-    getEmployeeDataForTraining(training.topic, training.requirement).then((data) => {
-      setEmployeeData(data); // Update employee data state
-      setOriginalEmployeeData(data); // Store original employee data for reset
-    });
+    getEmployeeDataForTraining(training.topic, training.requirement)
+      .then((data) => {
+        console.log('[ScheduleTable] toggleModal: Employee data received from getEmployeeDataForTraining:', data);
+        setEmployeeData(data);
+        setOriginalEmployeeData(data);
+      })
+      .catch(error => {
+        console.error('[ScheduleTable] toggleModal: Error fetching employee data:', error);
+        setEmployeeData([]); // Reset jika error
+        setOriginalEmployeeData([]); // Reset jika error
+        // Pertimbangkan untuk menampilkan pesan error kepada pengguna di modal
+      });
   };
   
 
@@ -437,4 +447,4 @@ const ScheduleTraining: React.FC = () => {
   );
 };
 
-export { ScheduleTraining };
+export { ScheduleTrainingTable };

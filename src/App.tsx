@@ -1,8 +1,15 @@
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, useRoutes } from "react-router-dom";
 import { Flowbite, ThemeModeScript } from 'flowbite-react';
 import customTheme from './utils/theme/custom-theme';
 import { AuthProvider } from './hooks/useAuth';
-import AppRoutes from "./routes/Router";
+import AppRoutesConfig from "./routes/Router";
+
+// Komponen baru untuk menggunakan useRoutes di dalam BrowserRouter
+const RoutesComponent = () => {
+  const routes = AppRoutesConfig(); // Panggil fungsi untuk mendapatkan konfigurasi
+  const element = useRoutes(routes); // Gunakan useRoutes
+  return element;
+};
 
 function App() {
   return (
@@ -11,7 +18,7 @@ function App() {
       <Flowbite theme={{ theme: customTheme }}>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <AuthProvider>
-            <AppRoutes />
+            <RoutesComponent /> {/* Gunakan komponen baru di sini */}
           </AuthProvider>
         </BrowserRouter>
       </Flowbite>

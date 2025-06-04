@@ -1,10 +1,16 @@
-
 import { Button, Dropdown } from "flowbite-react";
 import { Icon } from "@iconify/react";
 import user1 from "/src/assets/images/profile/user-1.jpg";
-import { Link } from "react-router";
+import { Link } from "react-router-dom";
+import { useAuth } from "../../../hooks/useAuth";
 
 const Profile = () => {
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <div className="relative group/menu">
       <Dropdown
@@ -26,30 +32,36 @@ const Profile = () => {
 
         <Dropdown.Item
           as={Link}
-          to="#"
+          to="/my-profile"
           className="px-3 py-3 flex items-center bg-hover group/link w-full gap-3 text-dark"
         >
           <Icon icon="solar:user-circle-outline" height={20} />
           My Profile
         </Dropdown.Item>
-        <Dropdown.Item
+        {/* <Dropdown.Item
           as={Link}
           to="#"
           className="px-3 py-3 flex items-center bg-hover group/link w-full gap-3 text-dark"
         >
           <Icon icon="solar:letter-linear" height={20} />
           My Account
-        </Dropdown.Item>
-        <Dropdown.Item
+        </Dropdown.Item> */}
+        {/* <Dropdown.Item
           as={Link}
           to="#"
           className="px-3 py-3 flex items-center bg-hover group/link w-full gap-3 text-dark"
         >
           <Icon icon="solar:checklist-linear" height={20} />
           My Task
-        </Dropdown.Item>
+        </Dropdown.Item> */}
         <div className="p-3 pt-0">
-        <Button as={Link}  size={'sm'}  to="/auth/login" className="mt-2 border border-primary text-primary bg-transparent hover:bg-lightprimary outline-none focus:outline-none">Logout</Button>
+        <Button 
+          size={'sm'}  
+          onClick={handleLogout}
+          className="mt-2 w-full border border-primary text-primary bg-transparent hover:bg-lightprimary outline-none focus:outline-none"
+        >
+          Logout
+        </Button>
         </div>
       </Dropdown>
     </div>
