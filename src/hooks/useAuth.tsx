@@ -37,13 +37,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const response = await axiosInstance.get<UserResponse>('/user');
         if (response.data && response.data.user) {
           setUser(response.data.user);
-          setIsAuthenticated(true);
+      setIsAuthenticated(true);
         } else {
           logout();
         }
-      } catch (error) {
-        logout();
-      }
+    } catch (error) {
+      logout();
+    }
     } else {
       setIsAuthenticated(false);
       setUser(null);
@@ -68,8 +68,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.data && response.data.token && response.data.user) {
         localStorage.setItem('token', response.data.token);
         setUser(response.data.user);
-        setIsAuthenticated(true);
-        navigate('/dashboard');
+      setIsAuthenticated(true);
+      navigate('/dashboard');
       } else {
         throw new Error(response.data.message || 'Login failed: No token or user data received');
       }

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
 import { Table } from 'flowbite-react';
 // import { HiOutlineDotsVertical } from "react-icons/hi";
 import axiosInstance from '../../utils/axios';
@@ -142,6 +143,79 @@ const ScheduleTrainingTable: React.FC = () => {
     });
     
     setVisibleData(filteredData);
+  };
+  
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const data = event.target?.result;
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        if (json.length === 0) {
+            alert("File Excel kosong atau format tidak sesuai.");
+            return;
+        }
+
+        const newSchedules = json.map((row) => {
+          // Basic validation
+          if (!row.Topic || !row['Start Date'] || !row['End Date'] || !row.Duration || !row.Venue || !row.Requirement) {
+              throw new Error("Beberapa kolom yang wajib diisi (Topic, Start Date, End Date, Duration, Venue, Requirement) tidak ditemukan di salah satu baris. Mohon periksa kembali file Excel Anda.");
+          }
+
+          // Date validation and conversion
+          const startDate = new Date(row['Start Date']);
+          const endDate = new Date(row['End Date']);
+
+          if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+              throw new Error(`Format tanggal tidak valid pada baris dengan topik "${row.Topic}". Gunakan format tanggal yang standar.`);
+          }
+            
+          return {
+            topic: row.Topic,
+            startDate: startDate.toISOString(), // Send as ISO string to backend
+            endDate: endDate.toISOString(), // Send as ISO string to backend
+            duration: row.Duration,
+            venue: row.Venue,
+            requirement: row.Requirement,
+            enrollment: 'Open',
+          };
+        });
+
+        await axiosInstance.post('/training/import', { schedules: newSchedules });
+        
+        alert('Jadwal training berhasil diimpor!');
+        
+        // Refresh data
+        getScheduleData().then((data) => {
+          if (Array.isArray(data)) {
+            const today = new Date();
+            const filteredData = data.filter((item) => {
+              const itemStartDate = new Date(item.startDate);
+              return itemStartDate >= today;
+            });
+            setScheduleData(filteredData);
+            setVisibleData(filteredData);
+          }
+        });
+
+      } catch (error: any) {
+        console.error('Error importing schedules:', error);
+        alert(`Gagal mengimpor jadwal: ${error.response?.data?.message || error.message}`);
+      } finally {
+        // Reset file input so user can upload the same file again if they want
+        e.target.value = '';
+      }
+    };
+    reader.readAsArrayBuffer(file); // Use readAsArrayBuffer for better compatibility
   };
   
   const handleEmployeeSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -314,6 +388,19 @@ const ScheduleTrainingTable: React.FC = () => {
             >
               Filter by Date
             </button>
+            <label
+              htmlFor="file-upload"
+              className="bg-green-500 text-white p-2 rounded-md cursor-pointer hover:bg-green-600"
+            >
+              Impor dari Excel
+            </label>
+            <input
+              id="file-upload"
+              type="file"
+              className="hidden"
+              onChange={handleFileUpload}
+              accept=".xlsx, .xls"
+            />
           </div>
       <div className="mt-3">
         <div className="overflow-x-auto">
