@@ -56,6 +56,19 @@ const RegisteredTraining: React.FC = () => {
   const [startDateFilter, setStartDateFilter] = useState('');
   const [endDateFilter, setEndDateFilter] = useState('');
 
+  const formatDate = (date: string | Date): string => {
+    const dateObj = new Date(date);
+    if (isNaN(dateObj.getTime())) {
+      return 'Invalid Date';
+    }
+    return dateObj.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
   const fetchData = async () => {
     setIsLoading(true);
     setError(null);
@@ -255,7 +268,7 @@ const RegisteredTraining: React.FC = () => {
                   <Table.HeadCell onClick={() => handleSort('nama')}>Nama</Table.HeadCell>
                   <Table.HeadCell>NIP</Table.HeadCell>
                   <Table.HeadCell>Departemen</Table.HeadCell>
-                  <Table.HeadCell>Topic</Table.HeadCell>
+                  <Table.HeadCell>Topik</Table.HeadCell>
                   <Table.HeadCell onClick={() => handleSort('startDate')}>Tanggal Mulai</Table.HeadCell>
                   <Table.HeadCell onClick={() => handleSort('endDate')}>Tanggal Selesai</Table.HeadCell>
                   <Table.HeadCell>Durasi</Table.HeadCell>
@@ -283,10 +296,10 @@ const RegisteredTraining: React.FC = () => {
                           <h6 className="text-sm">{item.topic}</h6>
                         </Table.Cell>
                         <Table.Cell>
-                          <h6 className="text-sm">{item.startDate}</h6>
+                          <h6 className="text-sm">{formatDate(item.startDate)}</h6>
                         </Table.Cell>
                         <Table.Cell>
-                          <h6 className="text-sm">{item.endDate}</h6>
+                          <h6 className="text-sm">{formatDate(item.endDate)}</h6>
                         </Table.Cell>
                         <Table.Cell>
                           <h6 className="text-sm">{item.duration}</h6>

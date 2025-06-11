@@ -55,13 +55,47 @@ const getScheduleData = async (): Promise<ScheduleType[]> => {
   }
 };
 
+const jobLevels = [
+  'worker',
+  'staff',
+  'team leader',
+  'section head',
+  'asisten departemen head',
+  'departemen head',
+  'asisten plant head',
+  'plant head'
+].map(level => level.toLowerCase());
+
 const getEmployeeDataForTraining = async (topic: string, requirement: string): Promise<EmployeeType[]> => {
   console.log('[ScheduleTable] getEmployeeDataForTraining: Fetching employees for topic:', topic, 'requirement:', requirement);
+  
+  const requirementParts = requirement.split('-').map(part => part.trim().toLowerCase());
+  let finalRequirements: string[];
+
+  if (requirementParts.length >= 2) {
+    const startLevel = requirementParts[0];
+    const endLevel = requirementParts[requirementParts.length - 1];
+    
+    const startIndex = jobLevels.indexOf(startLevel);
+    const endIndex = jobLevels.indexOf(endLevel);
+
+    if (startIndex !== -1 && endIndex !== -1 && startIndex <= endIndex) {
+      // It's a valid range, expand it
+      finalRequirements = jobLevels.slice(startIndex, endIndex + 1);
+    } else {
+      // Not a valid range according to jobLevels, treat as a single requirement string.
+      finalRequirements = [requirement];
+    }
+  } else {
+    // Only one part, or empty. Treat as a single requirement.
+    finalRequirements = [requirement];
+  }
+  
   try {
     // Menggunakan axiosInstance untuk POST request
     const response = await axiosInstance.post<{ employees: EmployeeType[] }>('/training/cek-karyawan', {
       nama_topic: topic,
-      requirement: requirement
+      requirement: finalRequirements,
     });
     
     const apiData = response.data;
@@ -172,8 +206,13 @@ const ScheduleTrainingTable: React.FC = () => {
           }
 
           // Date validation and conversion
-          const startDate = new Date(row['Start Date']);
-          const endDate = new Date(row['End Date']);
+          const startDateFromExcel = new Date(row['Start Date']);
+          const endDateFromExcel = new Date(row['End Date']);
+
+          // Create a new Date object in UTC from the date components of the Excel date.
+          // This avoids timezone issues where '2025-06-16' becomes '2025-06-15T17:00:00.000Z'.
+          const startDate = new Date(Date.UTC(startDateFromExcel.getFullYear(), startDateFromExcel.getMonth(), startDateFromExcel.getDate()));
+          const endDate = new Date(Date.UTC(endDateFromExcel.getFullYear(), endDateFromExcel.getMonth(), endDateFromExcel.getDate()));
 
           if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
               throw new Error(`Format tanggal tidak valid pada baris dengan topik "${row.Topic}". Gunakan format tanggal yang standar.`);
@@ -279,7 +318,12 @@ const ScheduleTrainingTable: React.FC = () => {
     if (isNaN(dateObj.getTime())) {
       return 'Invalid Date';
     }
-    return dateObj.toLocaleDateString();
+    return dateObj.toLocaleDateString('id-ID', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
   };
 
   // const loadMore = () => {
